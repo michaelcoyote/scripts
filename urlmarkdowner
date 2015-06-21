@@ -1,0 +1,18 @@
+#!/usr/bin/python
+#  URL/URI syntax in markdown is the dumbest
+#  crap ever and I'me even dumber for forgetting
+#  every time I have to use the dumb thing.
+#  This script will turn a url into markdown
+#  The idea here is I'd like to turn this into
+#  part of a linkdump/notetaking system
+
+import sys
+
+# collect the URL/URI from the command line
+
+if len(sys.argv) < 2:
+  sys.exit('Usage: %s url' % sys.argv[0])
+
+url = sys.argv[1]
+
+print '[link: {0} ]({1})'.format(url,url)
