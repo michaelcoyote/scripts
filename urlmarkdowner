@@ -22,18 +22,33 @@ def linkout(title,url):
 #
 # lookup module
 def lookup(url_lu):
-    import urllib2
+    from urllib2 import Request, urlopen, URLError
     from BeautifulSoup import BeautifulSoup
-    htd = BeautifulSoup(urllib2.urlopen(url_lu))
-    title_out = htd.title.string
-    return title_out
+    req = Request(url_lu)
+    try:
+        url_looked = urlopen(req)
+    except URLError, e:
+        if not arg.quiet:
+            import warnings
+            warnings.warn("Warning: Lookup failed = "+str(e.reason))  
+        title_out = 'Lookup failed = '+str(e.reason)+': '+url_lu
+        return title_out
+    else:
+        htd = BeautifulSoup(url_looked)
+        title_out = htd.title.string
+        return title_out
 
 # Set up the command arg parser
 args = argparse.ArgumentParser()
 # args
-args.add_argument('-f', action='store',default=False, dest='outfile', help='output file')
-args.add_argument('-l', action='store', dest='url_in', help='Save URL as link')
-args.add_argument('-L', action='store', dest='url_in_lu', help='Save URL as link and lookup title')
+args.add_argument('-f', action='store',default=False, dest='outfile', 
+        help='output file')
+args.add_argument('-l', action='store', dest='url_in', 
+        help='Save URL as link')
+args.add_argument('-L', action='store', dest='url_in_lu', 
+        help='Save URL as link and lookup title')
+args.add_argument('-q', action='store_true', default=False, dest='quiet',
+        help='turn off warnings')
 # args.add_argument('-t', action='store', dest='link_title', help='link title')
 #
 arg = args.parse_args()
