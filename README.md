@@ -14,11 +14,12 @@ Everything here is "use at your own risk", "park it, lock it, not responsible" a
 
 - urlmarkdowner
   - this is a simple script to turn links into markdown
+  - `urlmarkdowner -l url` will lookup the URL and print the markdown link to stdout.
   - if you invoke with a `-f file.md` it will append the link to that file
     otherwise it will write to stdout
-  - using `-L url` will look up the URL you give it and use the title text
     as the title 
-  - using `-l url` will write the word "Title:" followed by the bare URL.
+  - `-t title_text` will prepend a title text of your choice to the link title
+  - `-n` turns off the lookup featurea
   - this is not complete and functions will be added as needed.
 
 ### other people's programming
