@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+
+# sftp buddy
+
+CONFIG_FILE="$HOME/.sb_config"
+
+# Function to create example config file
+create_example_config() {
+    cat > "$CONFIG_FILE" << EOL
+# SFTP Configuration
+
+## Server details
+#HOSTNAME=your_sftp_server.com
+#USERNAME=your_username
+#PASSWORD=your_password
+
+# Directory settings
+#LOCAL_ROOT=/path/to/local/root
+#REMOTE_ROOT=/path/to/remote/root
+EOL
+    echo "Example configuration file created at $CONFIG_FILE"
+    echo "Uncomment the variables and change to your actual settings before running the script again."
+    exit 1
+}
+
+# Check if config file exists, create example if it doesn't
+if [ ! -f "$CONFIG_FILE" ]; then
+    create_example_config
+fi
+
+# Read config file into an array
+declare -A config
+while IFS='=' read -r key value; do
+    # Ignore comments and empty lines
+    [[ $key =~ ^#.*$ ]] || [[ -z $key ]] && continue
+    eval "value=$value"
+    config[$key]=$value
+done < "$CONFIG_FILE"
+
+# Check if required variables are set
+for var in HOSTNAME USERNAME PASSWORD LOCAL_ROOT REMOTE_ROOT; do
+    if [ -z "${config[$var]}" ]; then
+        echo "Error: $var is not set in $CONFIG_FILE"
+        exit 1
+    fi
+done
+
+# Function to display usage
+usage() {
+    echo "Usage: $0 <operating_directory> <operation>"
+    echo "Operations:"
+    echo "  download - Download files from the remote operating directory"
+    echo "  list - List contents of the remote operating directory"
+    echo "  interactive - Enter interactive SFTP mode in the operating directory"
+    exit 1
+}
+
+# Check if required arguments are provided
+if [ $# -ne 2 ]; then
+    usage
+fi
+
+OPERATING_DIR="$1"
+OPERATION="$2"
+
+# Ensure local operating directory exists
+LOCAL_OPERATING_DIR="${config[LOCAL_ROOT]}/${OPERATING_DIR}"
+echo "using local dir: ${LOCAL_OPERATING_DIR}"
+mkdir -p "$LOCAL_OPERATING_DIR"
+
+# Function to execute SFTP commands
+execute_sftp() {
+    local commands="$1"
+    expect << EOF
+spawn sftp ${config[USERNAME]}@${config[HOSTNAME]}
+expect "Password:"
+send "${config[PASSWORD]}\r"
+expect "sftp>"
+$commands
+send "bye\r"
+expect eof
+EOF
+}
+
+# Main script logic
+case "$OPERATION" in
+    download)
+        execute_sftp "
+send \"cd ${config[REMOTE_ROOT]}/${OPERATING_DIR}\r\"
+expect \"sftp>\"
+send \"lcd ${LOCAL_OPERATING_DIR}\r\"
+expect \"sftp>\"
+send \"mget *\r\"
+expect \"sftp>\"
+"
+        ;;
+    list)
+        execute_sftp "
+send \"cd ${config[REMOTE_ROOT]}/${OPERATING_DIR}\r\"
+expect \"sftp>\"
+send \"ls -la\r\"
+expect \"sftp>\"
+"
+        ;;
+    interactive)
+        expect -c "
+spawn sftp ${config[USERNAME]}@${config[HOSTNAME]}
+expect \"password:\"
+send \"${config[PASSWORD]}\r\"
+expect \"sftp>\"
+send \"cd ${config[REMOTE_ROOT]}/${OPERATING_DIR}\r\"
+expect \"sftp>\"
+send \"lcd ${LOCAL_OPERATING_DIR}\r\"
+expect \"sftp>\"
+interact
+"
+        ;;
+    *)
+        echo "Error: Unknown operation '$OPERATION'"
+        usage
+        ;;
+esac
+
+echo "Operation completed successfully."
+
