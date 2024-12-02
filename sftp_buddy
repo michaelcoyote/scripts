@@ -33,14 +33,16 @@ declare -A config
 while IFS='=' read -r key value; do
     # Ignore comments and empty lines
     [[ $key =~ ^#.*$ ]] || [[ -z $key ]] && continue
-    eval "value=$value"
+        if [[ $key == "LOCAL_ROOT" ]]; then
+            eval "value=$value"
+        fi
     config[$key]=$value
 done < "$CONFIG_FILE"
 
 # Check if required variables are set
 for var in HOSTNAME USERNAME PASSWORD LOCAL_ROOT REMOTE_ROOT; do
     if [ -z "${config[$var]}" ]; then
-        echo "Error: $var is not set in $CONFIG_FILE"
+        echo "Error: ${var} is not set in ${CONFIG_FILE}"
         exit 1
     fi
 done
@@ -90,7 +92,7 @@ send \"cd ${config[REMOTE_ROOT]}/${OPERATING_DIR}\r\"
 expect \"sftp>\"
 send \"lcd ${LOCAL_OPERATING_DIR}\r\"
 expect \"sftp>\"
-send \"mget *\r\"
+send \"get -p .\r\"
 expect \"sftp>\"
 "
         ;;
