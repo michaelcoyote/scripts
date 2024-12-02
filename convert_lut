@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# convert an aerospike LUT to UNIX epoch time
+#
+# convert_lut 466249504256
+# LUT: 466249504256
+# EPOCH: 1728553504.256
+# Date: 2024/10/10 09:45:04.256 UTC
+#
+LUT=$1
+AEROSPIKE_EPOCH=1262304000
+EPOCH=$(bc <<< "scale=3; (${LUT}/1000)+${AEROSPIKE_EPOCH};")
+EPOCH_WHOLE=$(echo ${EPOCH} | cut -f1 -d ".")
+EPOCH_DECIMAL=$(echo ${EPOCH} | cut -f2 -d ".")
+CONV=$(date -u -r ${EPOCH_WHOLE} +"%Y/%m/%d %H:%M:%S.${EPOCH_DECIMAL} %Z")
+echo "LUT: ${LUT}"
+echo "EPOCH: ${EPOCH}"
+echo "Date: ${CONV}"
